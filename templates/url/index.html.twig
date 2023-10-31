@@ -1,0 +1,104 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <h1 class="text-center mb-4">{{ h1 }}</h1>
+                <div class="card p-4 shadow">
+                    <form id="url-form">
+                        <input type="hidden" id="url-create" value="{{ path('url_create') }}" />
+                        <div class="mb-3">
+                            <label for="url" class="form-label">URL</label>
+                            <input type="text" class="form-control" id="url" name="url"
+                                   placeholder="Введіть URL наприклад page/application">
+                        </div>
+                        <div class="mb-3">
+                            <label for="url" class="form-label">Час життя</label>
+                            <input type="datetime-local" class="form-control" id="expiryDate" name="expiryDate"
+                                   placeholder="Введіть час життя URL">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Сгенерувати URL</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function showModal(message) {
+            const modalElement = document.querySelector('#myModal');
+            modalElement.querySelector('#modalText').textContent = message;
+            modalElement.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modalElement = document.querySelector('#myModal');
+            modalElement.style.display = 'none';
+        }
+
+        const closeBtn = document.querySelector('.btn-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        $('#url-form').on('submit', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            let inputDate = new Date($('#expiryDate').val());
+            $('#expiryDate').val(inputDate.toISOString().slice(0, 16));
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            if (inputDate < now) {
+                alert('Дата не может быть ранее сегодняшнего дня.');
+                return false;
+            }
+            inputDate = $('#expiryDate').val();
+
+            let inputUrl = $('#url').val();
+            inputUrl = inputUrl.startsWith('/') ? inputUrl.slice(1) : inputUrl;
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+
+            const fullUrl = `${protocol}//${host}/${inputUrl}`;
+
+            try {
+                const url = new URL(fullUrl);
+
+                if (/[а-яА-ЯЁёЇїІіЄєҐґ]/.test(decodeURIComponent(url.href))) {
+                    alert('URL содержит кириллические символы.');
+                    return false;
+                }
+            } catch {
+                alert('Недействительный URL.');
+                return false;
+            }
+
+            $.ajax({
+                url: '{{ path('url_create') }}',
+                type: 'POST',
+                data: {
+                    date: inputDate,
+                    url: fullUrl
+                },
+                success: function (response) {
+                    const protocol = window.location.protocol;
+                    const host = window.location.host;
+                    const fullShortUrl = `${protocol}//${host}/${response.short_url}`;
+                    showModal(`Коротка адресса: ${fullShortUrl}, ${response.message}`);
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+            });
+        });
+    </script>
+
+{% endblock %}

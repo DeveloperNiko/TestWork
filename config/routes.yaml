@@ -1,0 +1,20 @@
+controllers:
+    resource: ../src/Controller/
+    type: attribute
+app_url:
+  path: /
+  controller: App\Controller\UrlController::index
+url_create:
+  path: /url/create
+  controller: App\Controller\UrlController::create
+default:
+    path:     /{url}
+    controller: App\Controller\DefaultController::index
+    requirements:
+        url: .*
+
+catch_all:
+  path: /{url}
+  controller: App\Controller\DefaultController::catchAll
+  requirements:
+    url: .*
